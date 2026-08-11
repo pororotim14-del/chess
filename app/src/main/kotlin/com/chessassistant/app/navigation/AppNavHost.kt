@@ -48,7 +48,7 @@ private sealed class TopLevel(val route: String, val label: String, val icon: Im
 
 private const val GAME_ID_ARG = "gameId"
 
-private val tabs = listOf(TopLevel.Board, TopLevel.Games, TopLevel.Settings)
+private val tabs = listOf(TopLevel.Assistant, TopLevel.Board, TopLevel.Games, TopLevel.Settings)
 
 @Composable
 fun AppNavHost(navController: NavHostController = rememberNavController()) {
@@ -78,7 +78,7 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = TopLevel.Board.route,
+            startDestination = TopLevel.Assistant.route,
             modifier = Modifier.padding(padding),
         ) {
             composable(

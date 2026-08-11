@@ -194,8 +194,9 @@ fun AssistantScreen(
                     Text("Cara pakai", style = MaterialTheme.typography.titleSmall)
                     HowToStep("1", "Nyalakan engine dengan tombol Mulai.")
                     HowToStep("2", "Izinkan overlay + layanan aksesibilitas (satu kali).")
-                    HowToStep("3", "Buka aplikasi catur apa pun — posisi terbaca otomatis.")
-                    HowToStep("4", "Hidupkan AI auto-play & kalibrasi board agar AI mengetuk langkahnya sendiri.")
+                    HowToStep("3", "Buka aplikasi catur apa pun — board terbaca otomatis dari layar (screenshot).")
+                    HowToStep("4", "Hidupkan AI auto-play agar AI mengetuk langkahnya sendiri di board.")
+                    HowToStep("5", "Kalibrasi posisi board hanya jika deteksi otomatis kurang pas.")
                 }
             }
         }
