@@ -21,6 +21,9 @@ captures/
 # Signing secrets
 keystore.properties
 
+# Native build intermediates
+native-engine/.cxx/
+
 # Logs
 *.log
 
