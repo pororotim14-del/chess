@@ -8,17 +8,10 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
-// ---- Release signing -----------------------------------------------------
-// Loaded from keystore.properties (git-ignored) or environment variables.
-// Nothing secret is ever hard-coded here.
-val keystoreFile: String? = project.findProperty("KEYSTORE_FILE") as? String
-    ?: System.getenv("KEYSTORE_FILE")
-val keystorePassword: String? = project.findProperty("KEYSTORE_PASSWORD") as? String
-    ?: System.getenv("KEYSTORE_PASSWORD")
-val keyAlias: String? = project.findProperty("KEY_ALIAS") as? String
-    ?: System.getenv("KEY_ALIAS")
-val keyPassword: String? = project.findProperty("KEY_PASSWORD") as? String
-    ?: System.getenv("KEY_PASSWORD")
+val keystoreFile: String? = System.getenv("KEYSTORE_FILE")
+val keystorePassword: String? = System.getenv("KEYSTORE_PASSWORD")
+val keyAlias: String? = System.getenv("KEY_ALIAS")
+val keyPassword: String? = System.getenv("KEY_PASSWORD")
 
 fun loadSigningProperties(): Pair<Properties, Boolean> {
     val props = Properties()
@@ -41,55 +34,36 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "1.0.0"
-
+        versionName = "0.1.0"
+        vectorDrawables { useSupportLibrary = true }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
+    }
 
-        ndk {
-            debugSymbolLevel = "FULL"
+    signingConfigs {
+        if (hasSigning || keystoreFile != null) {
+            create("release") {
+                storeFile = file(keystoreFile ?: signProps.getProperty("KEYSTORE_FILE", ""))
+                storePassword = keystorePassword ?: signProps.getProperty("KEYSTORE_PASSWORD", "")
+                keyAlias = keyAlias ?: signProps.getProperty("KEY_ALIAS", "")
+                keyPassword = keyPassword ?: signProps.getProperty("KEY_PASSWORD", "")
+            }
         }
     }
 
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
         }
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = if (hasSigning || keystoreFile != null) {
-                signingConfigs.create("release") {
-                    val filePath = (signProps.getProperty("KEYSTORE_FILE") ?: keystoreFile) ?: ""
-                    storeFile = rootProject.file(filePath)
-                    storePassword = signProps.getProperty("KEYSTORE_PASSWORD") ?: keystorePassword ?: ""
-                    keyAlias = signProps.getProperty("KEY_ALIAS") ?: keyAlias ?: ""
-                    keyPassword = signProps.getProperty("KEY_PASSWORD") ?: keyPassword ?: ""
-                }
-            } else {
-                null
+            if (signingConfigs.findByName("release") != null) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
-        create("benchmark") {
-            initWith(getByName("release"))
-            matchingFallbacks += "release"
-            isMinifyEnabled = false
-            isShrinkResources = false
-            signingConfig = null
-            applicationIdSuffix = ".benchmark"
-        }
-    }
-
-    buildFeatures {
-        compose = true
-        buildConfig = true
     }
 
     compileOptions {
@@ -97,12 +71,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-        jniLibs {
-            useLegacyPackaging = false
         }
     }
 }
@@ -118,37 +94,45 @@ dependencies {
     implementation(project(":core-engine"))
     implementation(project(":core-security"))
     implementation(project(":core-ui"))
-    implementation(project(":domain"))
     implementation(project(":data"))
-    implementation(project(":native-engine"))
-    implementation(project(":feature-board"))
+    implementation(project(":domain"))
     implementation(project(":feature-analysis"))
+    implementation(project(":feature-board"))
     implementation(project(":feature-games"))
     implementation(project(":feature-settings"))
+    implementation(project(":native-engine"))
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
-
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.process)
-    implementation(libs.androidx.navigation.compose)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.animation)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.navigation.compose)
+
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.datastore.core)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.androidx.test.core)
+
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
 }

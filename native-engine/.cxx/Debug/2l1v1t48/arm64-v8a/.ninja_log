@@ -1,0 +1,3 @@
+# ninja log v5
+0	355	1786448789208771077	CMakeFiles/chessengine.dir/engine.cpp.o	7edf84b17180d84c
+356	392	1786448789241771078	/workspaces/chess/native-engine/build/intermediates/cxx/Debug/2l1v1t48/obj/arm64-v8a/libchessengine.so	2014e131d94d7ac4
