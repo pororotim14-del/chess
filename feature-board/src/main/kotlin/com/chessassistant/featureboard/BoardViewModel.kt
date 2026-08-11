@@ -121,6 +121,18 @@ class BoardViewModel @Inject constructor(
         refresh()
     }
 
+    fun loadGame(gameId: Long) {
+        viewModelScope.launch {
+            val stored = gameRepository.loadGame(GameId(gameId)) ?: return@launch
+            sanHistory.clear()
+            sanHistory += stored.moves.map { it.san }
+            game = GameState(stored.initialFen)
+            stored.moves.forEach { game.playUci(it.uci) }
+            refresh()
+            runEngineHint()
+        }
+    }
+
     fun flip() {
         _uiState.update { it.copy(flipped = !it.flipped) }
     }

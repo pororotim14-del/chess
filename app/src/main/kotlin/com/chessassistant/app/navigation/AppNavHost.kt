@@ -11,14 +11,17 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.chessassistant.featureboard.BoardScreen
 import com.chessassistant.featureboard.BoardViewModel
 import com.chessassistant.featuregames.GamesScreen
@@ -26,11 +29,20 @@ import com.chessassistant.featuresettings.SettingsScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
 
-private sealed class TopLevel(val route: String, val label: String, val icon: ImageVector) {
-    data object Board : TopLevel("board", "Board", Icons.Filled.Analytics)
-    data object Games : TopLevel("games", "Games", Icons.Filled.Games)
-    data object Settings : TopLevel("settings", "Settings", Icons.Filled.Settings)
+private object Routes {
+    const val BOARD = "board"
+    const val BOARD_GAME = "board?gameId={gameId}"
+    const val GAMES = "games"
+    const val SETTINGS = "settings"
 }
+
+private sealed class TopLevel(val route: String, val label: String, val icon: ImageVector) {
+    data object Board : TopLevel(Routes.BOARD, "Board", Icons.Filled.Analytics)
+    data object Games : TopLevel(Routes.GAMES, "Games", Icons.Filled.Games)
+    data object Settings : TopLevel(Routes.SETTINGS, "Settings", Icons.Filled.Settings)
+}
+
+private const val GAME_ID_ARG = "gameId"
 
 private val tabs = listOf(TopLevel.Board, TopLevel.Games, TopLevel.Settings)
 
@@ -38,13 +50,14 @@ private val tabs = listOf(TopLevel.Board, TopLevel.Games, TopLevel.Settings)
 fun AppNavHost(navController: NavHostController = rememberNavController()) {
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
+    val currentTab = currentRoute?.substringBefore('?')
 
     Scaffold(
         bottomBar = {
             NavigationBar {
                 tabs.forEach { tab ->
                     NavigationBarItem(
-                        selected = currentRoute == tab.route,
+                        selected = currentTab == tab.route,
                         onClick = {
                             navController.navigate(tab.route) {
                                 popUpTo(navController.graph.startDestinationId) { saveState = true }
@@ -64,9 +77,21 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
             startDestination = TopLevel.Board.route,
             modifier = Modifier.padding(padding),
         ) {
-            composable(TopLevel.Board.route) {
+            composable(
+                route = Routes.BOARD_GAME,
+                arguments = listOf(
+                    navArgument(GAME_ID_ARG) {
+                        type = NavType.LongType
+                        defaultValue = -1L
+                    },
+                ),
+            ) { entry ->
                 val vm: BoardViewModel = hiltViewModel()
                 val state by vm.uiState.collectAsState()
+                val gameId = entry.arguments?.getLong(GAME_ID_ARG) ?: -1L
+                LaunchedEffect(gameId) {
+                    if (gameId >= 0) vm.loadGame(gameId)
+                }
                 BoardScreen(
                     state = state,
                     onSquareClick = vm::onSquareClick,
@@ -78,7 +103,11 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
                 )
             }
             composable(TopLevel.Games.route) {
-                GamesScreen(onGameClick = { _ -> })
+                GamesScreen(onGameClick = { id ->
+                    navController.navigate("${Routes.BOARD}?$GAME_ID_ARG=$id") {
+                        launchSingleTop = true
+                    }
+                })
             }
             composable(TopLevel.Settings.route) {
                 SettingsScreen()
