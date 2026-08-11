@@ -21,6 +21,7 @@ import com.chessassistant.domain.repository.GameRepository
 import com.chessassistant.domain.repository.OpeningRepository
 import com.chessassistant.domain.repository.PreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -91,6 +92,7 @@ class BoardViewModel @Inject constructor(
             appendSan(game, move)
             refresh()
             runEngineHint()
+            scheduleAiReply()
         }
     }
 
@@ -135,6 +137,23 @@ class BoardViewModel @Inject constructor(
 
     fun flip() {
         _uiState.update { it.copy(flipped = !it.flipped) }
+    }
+
+    fun setAiMode(value: Boolean) {
+        _uiState.update { it.copy(aiMode = value) }
+        if (value) scheduleAiReply()
+    }
+
+    private fun scheduleAiReply() {
+        if (!_uiState.value.aiMode) return
+        viewModelScope.launch {
+            delay(450)
+            if (!_uiState.value.aiMode) return@launch
+            if (game.gameStatus() != GameStatus.NORMAL) return@launch
+            val best = engine.bestMove(game.position) ?: return@launch
+            val move = Move.fromUci(best.move) ?: return@launch
+            play(move)
+        }
     }
 
     fun saveGame() {

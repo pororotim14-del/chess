@@ -18,6 +18,7 @@ data class BoardUiState(
     val bestMoveHint: String? = null,
     val openingName: String? = null,
     val analysisReady: Boolean = false,
+    val aiMode: Boolean = false,
 ) {
     companion object {
         val IDLE = BoardUiState()

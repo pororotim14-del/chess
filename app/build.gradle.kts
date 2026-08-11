@@ -97,6 +97,7 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":domain"))
     implementation(project(":feature-analysis"))
+    implementation(project(":feature-assistant"))
     implementation(project(":feature-board"))
     implementation(project(":feature-games"))
     implementation(project(":feature-settings"))

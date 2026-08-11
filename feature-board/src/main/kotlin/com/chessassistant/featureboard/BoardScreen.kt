@@ -10,8 +10,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.chessassistant.coreui.components.ChessBoard
@@ -25,6 +27,7 @@ fun BoardScreen(
     onRedo: () -> Unit,
     onFlip: () -> Unit,
     onSave: () -> Unit,
+    onAiModeChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -77,6 +80,17 @@ fun BoardScreen(
                     text = "Engine suggests: $it",
                     style = MaterialTheme.typography.bodyMedium,
                 )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = if (state.aiMode) "Lawan AI aktif — engine balas otomatis" else "Lawan AI",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Switch(checked = state.aiMode, onCheckedChange = onAiModeChange)
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),

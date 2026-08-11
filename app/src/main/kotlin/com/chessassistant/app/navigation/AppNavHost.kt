@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Games
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -26,18 +27,21 @@ import com.chessassistant.featureboard.BoardScreen
 import com.chessassistant.featureboard.BoardViewModel
 import com.chessassistant.featuregames.GamesScreen
 import com.chessassistant.featuresettings.SettingsScreen
+import com.chessassistant.featureassistant.AssistantScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
 
 private object Routes {
     const val BOARD = "board"
     const val BOARD_GAME = "board?gameId={gameId}"
+    const val ASSISTANT = "assistant"
     const val GAMES = "games"
     const val SETTINGS = "settings"
 }
 
 private sealed class TopLevel(val route: String, val label: String, val icon: ImageVector) {
     data object Board : TopLevel(Routes.BOARD, "Board", Icons.Filled.Analytics)
+    data object Assistant : TopLevel(Routes.ASSISTANT, "Asisten", Icons.Filled.SmartToy)
     data object Games : TopLevel(Routes.GAMES, "Games", Icons.Filled.Games)
     data object Settings : TopLevel(Routes.SETTINGS, "Settings", Icons.Filled.Settings)
 }
@@ -100,6 +104,7 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
                     onRedo = vm::redo,
                     onFlip = vm::flip,
                     onSave = vm::saveGame,
+                    onAiModeChange = vm::setAiMode,
                 )
             }
             composable(TopLevel.Games.route) {
@@ -108,6 +113,9 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
                         launchSingleTop = true
                     }
                 })
+            }
+            composable(TopLevel.Assistant.route) {
+                AssistantScreen()
             }
             composable(TopLevel.Settings.route) {
                 SettingsScreen()

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_service_name">Asisten Catur</string>
+    <string name="accessibility_service_description">Membaca posisi papan catur dari aplikasi catur lain (notasi/teks) untuk analisis real-time oleh mesin catur. Data hanya diproses di perangkat dan tidak dikirim ke mana pun.</string>
+</resources>
