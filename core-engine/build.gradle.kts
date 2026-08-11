@@ -23,6 +23,7 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":core-chess"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 
