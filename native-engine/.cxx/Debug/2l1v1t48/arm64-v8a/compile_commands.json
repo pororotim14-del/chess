@@ -1,7 +1,0 @@
-[
-{
-  "directory": "/workspaces/chess/native-engine/.cxx/Debug/2l1v1t48/arm64-v8a",
-  "command": "/opt/android-sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=aarch64-none-linux-android24 --sysroot=/opt/android-sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dchessengine_EXPORTS -I/workspaces/chess/native-engine/src/main/cpp -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -O2 -Wall -o CMakeFiles/chessengine.dir/engine.cpp.o -c /workspaces/chess/native-engine/src/main/cpp/engine.cpp",
-  "file": "/workspaces/chess/native-engine/src/main/cpp/engine.cpp"
-}
-]

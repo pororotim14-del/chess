@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22.1)
 project("chessengine")
 
-add_library(chessengine SHARED engine.cpp)
+add_library(chessengine SHARED engine.cpp jni_bridge.cpp)
 
 target_compile_features(chessengine PRIVATE cxx_std_17)
 target_compile_options(chessengine PRIVATE -O2 -Wall)

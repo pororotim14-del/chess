@@ -1,3 +1,0 @@
-/workspaces/chess/native-engine/.cxx/Debug/2l1v1t48/arm64-v8a/CMakeFiles/chessengine.dir
-/workspaces/chess/native-engine/.cxx/Debug/2l1v1t48/arm64-v8a/CMakeFiles/edit_cache.dir
-/workspaces/chess/native-engine/.cxx/Debug/2l1v1t48/arm64-v8a/CMakeFiles/rebuild_cache.dir
