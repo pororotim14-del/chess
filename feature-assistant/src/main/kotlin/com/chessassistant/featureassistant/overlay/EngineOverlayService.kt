@@ -7,10 +7,12 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.os.Build
 import android.os.IBinder
+import android.provider.Settings
 import android.util.DisplayMetrics
 import android.view.Gravity
 import android.view.View
@@ -18,13 +20,17 @@ import android.view.WindowManager
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.chessassistant.corechess.model.Color
 import com.chessassistant.featureassistant.assistant.AssistantPrefs
 import com.chessassistant.featureassistant.assistant.AssistantState
+import com.chessassistant.security.engine.EngineSecurityManager
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import javax.inject.Inject
 
 /**
  * Foreground service that hosts the floating engine-assistant panel over any
@@ -41,6 +47,7 @@ class EngineOverlayService : Service() {
     private var calibrationView: View? = null
     private var panelExpanded = true
     private var wantsFocus = false
+    private var hasOverlayPermission = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -48,15 +55,40 @@ class EngineOverlayService : Service() {
         super.onCreate()
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         prefs = AssistantPrefs(applicationContext)
+        hasOverlayPermission = checkOverlayPermission()
+        
+        if (!hasOverlayPermission) {
+            AssistantState.setMessage("Izin overlay tidak diberikan. Buka pengaturan untuk mengaktifkan.")
+            stopSelf()
+            return
+        }
+        
+        // Create security infrastructure directly
+        val securityManager = com.chessassistant.security.SecurityManager(
+            com.chessassistant.security.DeviceFingerprint(
+                model = android.os.Build.MODEL,
+                board = android.os.Build.BOARD,
+                manufacturer = android.os.Build.MANUFACTURER,
+                bootId = null,
+            ),
+            com.chessassistant.security.AndroidKeyStoreSecretStorage()
+        )
+        val engineSecurityManager = com.chessassistant.security.engine.EngineSecurityManager.getInstance(applicationContext, securityManager)
+        
         AssistantState.setBoardRect(prefs.loadBoardRect())
         AssistantState.setBoardFlipped(prefs.loadFlipped())
         AssistantState.setAutoPlay(prefs.loadAutoPlay())
         AssistantState.setEngineColor(prefs.loadEngineColor())
         AssistantState.setRunning(true)
-        AssistantAnalyzer.launch(scope)
+        AssistantAnalyzer.launch(scope, engineSecurityManager)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (!hasOverlayPermission) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        
         startForegroundCompat()
         if (intent?.action == ACTION_CALIBRATE) {
             showCalibration()
@@ -73,6 +105,14 @@ class EngineOverlayService : Service() {
         removePanel()
         removeCalibration()
         super.onDestroy()
+    }
+
+    private fun checkOverlayPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(this)
+        } else {
+            true
+        }
     }
 
     // ------------------------------------------------------------------ panel
@@ -107,7 +147,12 @@ class EngineOverlayService : Service() {
             }
         }
         panelView = content
-        windowManager.addView(content, panelParams())
+        try {
+            windowManager.addView(content, panelParams())
+        } catch (e: Exception) {
+            AssistantState.setMessage("Gagal menampilkan overlay: ${e.message}")
+            removePanel()
+        }
     }
 
     private fun removePanel() {
@@ -117,7 +162,11 @@ class EngineOverlayService : Service() {
 
     private fun updatePanelWindow() {
         val view = panelView ?: return
-        runCatching { windowManager.updateViewLayout(view, panelParams()) }
+        try {
+            windowManager.updateViewLayout(view, panelParams())
+        } catch (e: Exception) {
+            // Ignore layout update errors
+        }
     }
 
     private fun panelParams(): WindowManager.LayoutParams {
@@ -169,7 +218,12 @@ class EngineOverlayService : Service() {
             }
         }
         calibrationView = content
-        windowManager.addView(content, calibrationParams())
+        try {
+            windowManager.addView(content, calibrationParams())
+        } catch (e: Exception) {
+            AssistantState.setMessage("Gagal menampilkan kalibrasi: ${e.message}")
+            removeCalibration()
+        }
     }
 
     private fun removeCalibration() {
@@ -208,10 +262,10 @@ class EngineOverlayService : Service() {
     // ------------------------------------------------------------ foreground
 
     private fun startForegroundCompat() {
-        val channelId = "chess_assistant_overlay"
+        val channelId = "trx_chess_overlay"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val channel = NotificationChannel(channelId, "Engine Asisten", NotificationManager.IMPORTANCE_LOW)
+            val channel = NotificationChannel(channelId, "TRX-CHESS Engine", NotificationManager.IMPORTANCE_LOW)
             manager.createNotificationChannel(channel)
         }
         val contentIntent = PendingIntent.getActivity(
@@ -221,7 +275,7 @@ class EngineOverlayService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val notification: Notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Engine Asisten aktif")
+            .setContentTitle("TRX-CHESS Engine aktif")
             .setContentText("Menganalisis posisi catur secara real-time")
             .setContentIntent(contentIntent)
             .setSmallIcon(android.R.drawable.ic_menu_manage)
@@ -235,13 +289,17 @@ class EngineOverlayService : Service() {
 
     companion object {
         private const val NOTIFICATION_ID = 101
-        const val ACTION_START = "com.chessassistant.overlay.START"
-        const val ACTION_STOP = "com.chessassistant.overlay.STOP"
-        const val ACTION_CALIBRATE = "com.chessassistant.overlay.CALIBRATE"
+        const val ACTION_START = "com.trxchess.overlay.START"
+        const val ACTION_STOP = "com.trxchess.overlay.STOP"
+        const val ACTION_CALIBRATE = "com.trxchess.overlay.CALIBRATE"
 
         fun start(context: Context) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+                // Permission not granted, cannot start
+                return
+            }
             val i = Intent(context, EngineOverlayService::class.java).setAction(ACTION_START)
-            context.startForegroundService(i)
+            ContextCompat.startForegroundService(context, i)
         }
 
         fun stop(context: Context) {
@@ -249,8 +307,11 @@ class EngineOverlayService : Service() {
         }
 
         fun startCalibrate(context: Context) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+                return
+            }
             val i = Intent(context, EngineOverlayService::class.java).setAction(ACTION_CALIBRATE)
-            context.startForegroundService(i)
+            ContextCompat.startForegroundService(context, i)
         }
     }
 }

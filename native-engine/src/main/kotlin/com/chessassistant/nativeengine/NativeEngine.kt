@@ -1,7 +1,7 @@
 package com.chessassistant.nativeengine
 
 /**
- * Thin façade over the C++ native engine.
+ * Thin façade over the C++ native engine (Stockfish).
  */
 object NativeEngine {
 
@@ -27,4 +27,45 @@ object NativeEngine {
      */
     @JvmStatic
     external fun bestMove(fen: String): String
+
+    /**
+     * Detailed analysis of a position with configurable depth.
+     * Returns AnalysisResult with best move, evaluation, and principal variation.
+     */
+    @JvmStatic
+    external fun analyzePosition(fen: String, depth: Int): AnalysisResult
+
+    /**
+     * Sets the search depth for subsequent bestMove/evalSummary calls.
+     */
+    @JvmStatic
+    external fun setSearchDepth(depth: Int)
+
+    /**
+     * Gets the principal variation for the last analyzed position.
+     */
+    @JvmStatic
+    external fun getPrincipalVariation(): String
+
+    /**
+     * Security: Validates engine integrity at runtime.
+     * Returns true if engine binary matches expected checksum.
+     */
+    @JvmStatic
+    external fun verifyEngineIntegrity(): Boolean
+
+    /**
+     * Security: Gets engine fingerprint for attestation.
+     */
+    @JvmStatic
+    external fun getEngineFingerprint(): String
+
+    data class AnalysisResult(
+        val bestMove: String,
+        val evaluation: Int,
+        val principalVariation: String,
+        val depth: Int,
+        val nodes: Long,
+        val timeMs: Long
+    )
 }

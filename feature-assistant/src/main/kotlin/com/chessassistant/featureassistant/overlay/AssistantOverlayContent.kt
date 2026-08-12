@@ -20,7 +20,9 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Gesture
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
@@ -100,6 +102,7 @@ fun AssistantOverlayContent(
                 running = running,
                 expanded = expanded,
                 bestMove = analysis.bestMove,
+                classification = analysis.moveClassification,
                 onToggleExpand = { onToggleExpand(!expanded) },
                 onClose = onClose,
             )
@@ -121,11 +124,16 @@ fun AssistantOverlayContent(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(
-                        text = formatEval(analysis.evalCp, sideToMove),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = formatEval(analysis.evalCp, sideToMove),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        if (analysis.moveClassification.isNotEmpty()) {
+                            ClassificationBadge(classification = analysis.moveClassification)
+                        }
+                    }
                 }
                 if (analysis.pv.isNotBlank()) {
                     Text(
@@ -139,6 +147,8 @@ fun AssistantOverlayContent(
                 InfoRow("Deteksi", hint)
                 fen?.let { InfoRow("FEN", it.take(42) + if (it.length > 42) "..." else "") }
                 InfoRow("Langkah", "${moves.size}")
+                InfoRow("Kedalaman", "${analysis.depth}")
+                InfoRow("Node", formatNodes(analysis.nodes))
 
                 message?.let {
                     Text(
@@ -212,6 +222,10 @@ fun AssistantOverlayContent(
                 }
 
                 FenInput(onFocusableChange = onFocusableChange, onLoadFen = onLoadFen)
+                
+                DividerWithText("Tentang TRX-CHESS")
+                
+                AboutSection()
             }
         }
     }
@@ -222,6 +236,7 @@ private fun HeaderRow(
     running: Boolean,
     expanded: Boolean,
     bestMove: String,
+    classification: String,
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
 ) {
@@ -240,15 +255,20 @@ private fun HeaderRow(
         Spacer(Modifier.width(8.dp))
         Icon(Icons.Filled.SmartToy, null, modifier = Modifier.size(18.dp), tint = ChessGreenDark)
         Spacer(Modifier.width(6.dp))
-        Text("Engine Asisten", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        Text("TRX-CHESS Engine", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
         if (!expanded && bestMove.isNotEmpty()) {
             Spacer(Modifier.width(8.dp))
-            Text(
-                text = bestMove,
-                style = MaterialTheme.typography.bodySmall,
-                fontFamily = FontFamily.Monospace,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = bestMove,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                if (classification.isNotEmpty()) {
+                    ClassificationBadge(classification = classification, small = true)
+                }
+            }
         }
         Spacer(Modifier.weight(1f))
         Icon(
@@ -259,6 +279,35 @@ private fun HeaderRow(
         IconButton(onClick = onClose, modifier = Modifier.size(28.dp)) {
             Icon(Icons.Filled.Close, "Tutup", modifier = Modifier.size(16.dp))
         }
+    }
+}
+
+@Composable
+private fun ClassificationBadge(classification: String, small: Boolean = false) {
+    val (color, label) = when (classification) {
+        "!!", "!! Brilliant" -> Pair(ChessGreenDark, "!!")
+        "!", "! Good" -> Pair(PastelGreen, "!")
+        "✓ Best" -> Pair(MaterialTheme.colorScheme.primary, "✓")
+        "?", "? Inaccurate" -> Pair(Color(0xFFFFB74D), "?")
+        "??", "?? Mistake" -> Pair(Color(0xFFF48FB1), "??")
+        "???", "??? Blunder" -> Pair(CheckRed, "???")
+        else -> Pair(MaterialTheme.colorScheme.onSurfaceVariant, classification)
+    }
+    
+    Box(
+        modifier = Modifier
+            .padding(start = 4.dp)
+            .padding(horizontal = if (small) 4.dp else 6.dp, vertical = if (small) 1.dp else 2.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(color.copy(alpha = 0.2f))
+            .border(1.dp, color, RoundedCornerShape(4.dp)),
+    ) {
+        Text(
+            text = label,
+            style = if (small) MaterialTheme.typography.labelSmall else MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            color = color,
+        )
     }
 }
 
@@ -344,10 +393,124 @@ private fun FenInput(
     }
 }
 
+@Composable
+private fun DividerWithText(text: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant),
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Bold,
+        )
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant),
+        )
+    }
+}
+
+@Composable
+private fun AboutSection() {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Security, null, modifier = Modifier.size(18.dp), tint = ChessGreenDark)
+            Spacer(Modifier.width(4.dp))
+            Text("TRX-CHESS", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        }
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Info, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(4.dp))
+            Text("Engine: Stockfish 17 (latest)", style = MaterialTheme.typography.bodySmall)
+        }
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Security, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(4.dp))
+            Text("Keamanan: Lapisan 6-level (Integritas, Attestasi, Enkripsi, Anti-tamper, Secure Storage, Keystore)", 
+                style = MaterialTheme.typography.bodySmall, maxLines = 2)
+        }
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Info, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(4.dp))
+            Text("Klasifikasi Langkah: !! Brilliant  ! Good  ✓ Best  ? Inaccurate  ?? Mistake  ??? Blunder",
+                style = MaterialTheme.typography.bodySmall, maxLines = 2)
+        }
+
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant),
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Info, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(4.dp))
+            Text("Telegram: t.me/SoloBanNoTrash", style = MaterialTheme.typography.bodySmall)
+        }
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Info, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(4.dp))
+            Text("By Troxzy", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
 internal fun formatEval(cp: Int, sideToMove: ChessColor?): String {
     val adjusted = if (sideToMove == ChessColor.BLACK) -cp else cp
     if (adjusted >= 100000) return "Mate"
     if (adjusted <= -100000) return "-Mate"
     val value = adjusted / 100.0
     return if (value >= 0) String.format("+%.2f", value) else String.format("%.2f", value)
+}
+
+internal fun formatNodes(nodes: Long): String {
+    return when {
+        nodes >= 1_000_000_000 -> String.format("%.1fB", nodes / 1_000_000_000.0)
+        nodes >= 1_000_000 -> String.format("%.1fM", nodes / 1_000_000.0)
+        nodes >= 1_000 -> String.format("%.1fK", nodes / 1_000.0)
+        else -> nodes.toString()
+    }
 }

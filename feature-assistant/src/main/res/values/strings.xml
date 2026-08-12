@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="accessibility_service_name">Asisten Catur</string>
-    <string name="accessibility_service_description">Membaca posisi papan catur dari aplikasi catur lain (notasi/teks) untuk analisis real-time oleh mesin catur. Data hanya diproses di perangkat dan tidak dikirim ke mana pun.</string>
+    <string name="accessibility_service_name">TRX-CHESS Assistant</string>
+    <string name="accessibility_service_description">Membaca posisi papan catur dari aplikasi catur lain untuk analisis real-time. Data hanya diproses di perangkat dan tidak dikirim ke mana pun.</string>
+    <string name="about_title">About</string>
+    <string name="about_telegram">Telegram: t.me/SoloBanNoTrash</string>
+    <string name="about_credit">By Troxzy</string>
 </resources>

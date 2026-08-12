@@ -31,6 +31,7 @@ dependencies {
     implementation(project(":core-chess"))
     implementation(project(":core-ui"))
     implementation(project(":native-engine"))
+    implementation(project(":core-security"))
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

@@ -18,6 +18,9 @@ object AssistantState {
         val evalCp: Int = 0,
         val pv: String = "",
         val updatedAt: Long = 0L,
+        val moveClassification: String = "",
+        val depth: Int = 0,
+        val nodes: Long = 0,
     )
 
     private val _running = MutableStateFlow(false)

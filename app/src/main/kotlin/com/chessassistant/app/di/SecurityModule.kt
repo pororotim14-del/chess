@@ -1,10 +1,12 @@
 package com.chessassistant.app.di
 
+import android.content.Context
 import android.os.Build
 import com.chessassistant.security.AndroidKeyStoreSecretStorage
 import com.chessassistant.security.DeviceFingerprint
 import com.chessassistant.security.SecretStorage
 import com.chessassistant.security.SecurityManager
+import com.chessassistant.security.engine.EngineSecurityManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

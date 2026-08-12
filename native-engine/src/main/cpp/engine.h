@@ -1,30 +1,34 @@
 #ifndef CHESS_ENGINE_ENGINE_H
 #define CHESS_ENGINE_ENGINE_H
 
-#define ENGINE_BINDING_VERSION 2
+#define ENGINE_BINDING_VERSION 4
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Returns ENGINE_BINDING_VERSION. */
 int chess_engine_version(void);
 
-/* Parses a FEN into the internal position. Returns 0 on success. */
+bool chess_engine_init(void);
+
 int chess_engine_load(const char* fen);
 
-/*
- * Searches the loaded position and copies the best move in UCI notation
- * (e.g. "e2e4", "a7a8q") into `out` (which holds `cap` bytes).
- * Returns the number of bytes written (0 when there is no legal move).
- */
 int chess_engine_best_move(char* out, int cap);
 
-/* Static evaluation of the loaded position in centipawns from White's view. */
 int chess_engine_eval(void);
+
+void chess_engine_set_depth(int depth);
+
+void chess_engine_get_pv(char* out, int cap, int* scores, int max_moves);
+
+int chess_engine_analyze(const char* fen, int depth, char* best_out, int* eval_out, char* pv_out, int pv_cap);
+
+long long chess_engine_nodes(void);
+
+long long chess_engine_time(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // CHESS_ENGINE_ENGINE_H
+#endif

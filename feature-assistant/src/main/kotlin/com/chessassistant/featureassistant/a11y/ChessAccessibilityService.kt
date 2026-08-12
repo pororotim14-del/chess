@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
+import java.util.HashMap
 import java.util.concurrent.Executor
 
 /**
@@ -136,12 +137,11 @@ class ChessAccessibilityService : AccessibilityService() {
         onFailure: () -> Unit,
     ) {
         try {
-            val callbackClass = try {
+            val callbackClass = Class.forName("android.accessibilityservice.AccessibilityService\$TakeScreenshotCallback")
+            val resultClass = try {
                 Class.forName("android.accessibilityservice.AccessibilityService\$ScreenshotResult")
-                Class.forName("android.accessibilityservice.AccessibilityService\$TakeScreenshotCallback")
             } catch (e: ClassNotFoundException) {
                 Class.forName("android.accessibilityservice.AccessibilityService\$TakeScreenshotResult")
-                Class.forName("android.accessibilityservice.AccessibilityService\$TakeScreenshotCallback")
             }
             val method = AccessibilityService::class.java.getMethod(
                 "takeScreenshot",
@@ -260,10 +260,14 @@ class ChessAccessibilityService : AccessibilityService() {
     }
 
     private fun dispatchTap(p: PointF) {
-        val path = Path().apply { moveTo(p.x, p.y) }
-        val stroke = GestureDescription.StrokeDescription(path, 0, 70)
-        val gesture = GestureDescription.Builder().addStroke(stroke).build()
-        dispatchGesture(gesture, null, null)
+        try {
+            val path = Path().apply { moveTo(p.x, p.y) }
+            val stroke = GestureDescription.StrokeDescription(path, 0, 70)
+            val gesture = GestureDescription.Builder().addStroke(stroke).build()
+            dispatchGesture(gesture, null, null)
+        } catch (e: Exception) {
+            // Ignore gesture dispatch errors
+        }
     }
 
     private fun squareCenter(sq: Int, rect: Rect): PointF {
